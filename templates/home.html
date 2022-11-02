@@ -53,7 +53,7 @@
 				</tr>
 				<tr>
 					<td><label for="comment">comment</label></td>
-					<td><input type="text" id="comment" name="comment"/></td>
+					<td><input type="text" id="comment" name="comment"{% if comment %}value="{{ comment }}"{% endif %}/></td>
 				</tr>
 				<tr>
 					<td><label for="password">password</label></td>
