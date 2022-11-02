@@ -83,8 +83,8 @@ def guest():
     db = get_db()
 
     print(flask.request.form)
-    name = flask.request.form["name"]
-    comment = flask.request.form["comment"]
+    name = flask.request.form["name"].strip()
+    comment = flask.request.form["comment"].strip()
     going = flask.request.form["going"] == "going"
 
     if not name:
@@ -93,7 +93,7 @@ def guest():
     with db:
         guest = db.execute(
             "SELECT * FROM guest WHERE name = ?",
-            (flask.request.form["name"],),
+            (name,),
         ).fetchone()
 
     if guest is None:
