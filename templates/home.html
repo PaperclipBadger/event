@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>come to my party</title>
+		<meta charset="utf-8"/>
+	</head>
+	<body>
+		<!-- oho, reading the source code are we -->
+		<h1>it's a houseparty</h1>
+
+		<h2>costume theme: ironic dystopia</h3>
+		<p>ideas:</p>
+		<ul>
+			<li>cyberpunk edgerunners cosplay</li>
+			<li>maid costume</li>
+			<li>liz truss</li>
+		</ul>
+
+		<h2>events</h2>
+		<h3>organised fun at regular intervals</h3>
+		<ul>
+			<li>life drawing</li>
+			<li>cheese tasting</li>
+			<li>cupboard of feelings</li>
+			<li>and more!</li>
+		</ul>
+		<p>have cool skills you want to show off, or something you can teach? volunteer yourself as tribute!</p>
+
+		<h2>rules</h2>
+
+		<ol>
+			<li>RATION THE PASSION:<br>i’ll have a fridge full of booze but if you drink it all and pass out i won’t carry you home</li>
+			<li>CONSENT IS SEXY:<br>pay attention to body language, anything other than a fuck yeah is a fuck no</li>
+			<li>THE MORE THE MERRIER:<br>i’m new to Tokyo, i want to meet your cool friends</li> 
+			<li>隣さんに迷惑しないで:<br>if the party’s still popping at 23:30, we’ll migrate to a club so as not to bother my neighbours</li>
+		</ol>
+
+		<h2>rsvp</h2>
+		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
+		<form action="/api/guest" method="POST">
+			<table>
+				<tr>
+					<td><label for="name">name</label></td>
+					<td><input type="text" id="name" name="name" {% if name %}value="{{ name }}"{% endif %}/> </td>
+				</tr>
+				<tr>
+					<td><label for="going">going</label></td>
+					<td><input type="radio" id="going" name="going" value="going" {% if going %}checked="checked"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="not-going">not going</label></td>
+					<td><input type="radio" id="not-going" name="going" value="not going" {% if not going %}checked="checked"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="comment">comment</label></td>
+					<td><input type="text" id="comment" name="comment"/></td>
+				</tr>
+				<tr>
+					<td><label for="password">password</label></td>
+					<td><input type="password" id="password" name="password"/></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="submit"/></td>
+				</tr>
+			</table>
+		</form>
+		<h2>these cool cats are coming</h2>
+		<ul>
+			{% for name, comment in attending %}
+			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% endfor %}
+		</ul>
+		<h2>these cool cats are bailing</h2>
+		<ul>
+			{% for name, comment in bailing %}
+			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% endfor %}
+		</ul>
+	</body>
+</html>
