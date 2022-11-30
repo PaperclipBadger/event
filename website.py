@@ -32,8 +32,9 @@ def close_db(exception=None):
 
 @app.route("/")
 def home():
+    events = model.Events(get_db()).get_all()
     error = flask.request.args.get("error")
-    return flask.render_template("home.html", error=error)
+    return flask.render_template("home.html", error=error, events=events)
 
 
 @app.route("/<name>")

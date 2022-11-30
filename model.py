@@ -78,7 +78,7 @@ class Guests:
             return Guest(**dict_)
     
     @with_db
-    def get_all(self, event_id: int):
+    def get_all(self, event_id: int) -> list[Guest]:
         cursor = self.db.execute(
             "SELECT * FROM guest WHERE guestevent = ?",
             (event_id,),
@@ -142,6 +142,22 @@ class Events:
                 for field in dataclasses.fields(Event)
             }
             return Event(**dict_)
+    
+    @with_db
+    def get_all(self) -> list[Event]:
+        cursor = self.db.execute("SELECT * FROM event")
+        rows = cursor.fetchall()
+
+        events = []
+
+        for row in rows:
+            dict_ = {
+                field.name: row["event" + field.name]
+                for field in dataclasses.fields(Event)
+            }
+            events.append(Event(**dict_))
+        
+        return events
     
     @with_db
     def add(

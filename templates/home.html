@@ -12,6 +12,14 @@
 		You can create an event, and people can RSVP.
 		You don't need to create an account to do either of these things.
 
+		<h2>existing events</h2>
+
+		<ul>
+		{% for event in events %}
+		  <li><a href="{{ url_for('event', name=event.name) }}">{{ event.title }}</a></li>
+		{% endfor %}
+		</ul>
+
 		<h2>create an event</h2>
 
 		<p>
