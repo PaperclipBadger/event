@@ -57,12 +57,21 @@
 				</tr>
 			</table>
 		</form>
-
+		{% if attending %}
 		<h2>these cool cats are coming</h2>
 		<ul>
 			{% for name, comment in attending %}
 			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
 			{% endfor %}
 		</ul>
+		{% endif %}
+		{% if bailing %}
+		<h2>these cool cats are bailing</h2>
+		<ul>
+			{% for name, comment in bailing %}
+			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% endfor %}
+		</ul>
+		{% endif %}
 	</body>
 </html>

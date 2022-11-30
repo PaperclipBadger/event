@@ -59,6 +59,7 @@ def event(name: str):
         guestcomment=flask.request.args.get("comment"),
         guestgoing=flask.request.args.get("going", "True") != "False",
         attending=[(guest.name, guest.comment) for guest in guests if guest.going],
+        bailing=[(guest.name, guest.comment) for guest in guests if not guest.going],
     )
 
 
