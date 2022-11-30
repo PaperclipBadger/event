@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>{{ title }}</title>
+		<style>{{ style | safe }}</style>
+	</head>
+	<body>
+		<a href="{{ url_for('edit_event', name=name) }}"></a>
+		{{ desc | safe }}
+
+		<h2>these cool cats are coming</h2>
+		<ul>
+			{% for name, comment in attending %}
+			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% endfor %}
+		</ul>
+
+		<h2>rsvp</h2>
+
+		<p>please fill in the form below to indicate whether you're coming.
+		set a password.
+		you can change your response later by using the same name and password.
+		leave a comment if you like!
+		comments are visible to everyone.</p>
+		<!-- passwords are stored hashed and salted
+		but then again, you have only my word for that ;)
+		maybe don't reuse your usual password here
+		-->
+
+		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
+		<form action="/api/guest" method="POST">
+			<input hidden="true" type="text" id="event" name="event" value="{{ name }}"/>
+			<table>
+				<tr>
+					<td><label for="name">name</label></td>
+					<td><input type="text" id="name" name="name" {% if guestname %}value="{{ guestname }}"{% endif %}/> </td>
+				</tr>
+				<tr>
+					<td><label for="going">going</label></td>
+					<td><input type="radio" id="going" name="going" value="going" {% if guestgoing %}checked="checked"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="not-going">not going</label></td>
+					<td><input type="radio" id="not-going" name="going" value="not going" {% if not guestgoing %}checked="checked"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="comment">comment</label></td>
+					<td><input type="text" id="comment" name="comment"{% if comment %}value="{{ guestcomment }}"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="password">password</label></td>
+					<td><input type="password" id="password" name="password"/></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="submit"/></td>
+				</tr>
+			</table>
+		</form>
+	</body>
+</html>

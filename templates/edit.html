@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>edit event "{{ name }}"</title>
+		<style>{{ style | safe }}</style>
+	</head>
+	<body>
+		<h1>edit event "{{ name }}"</h1>
+
+	 	<a href="{{ url_for('event', name=name) }}">view the event</a>
+
+		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
+		<form action="/api/event/{{ name }}" method="POST">
+			<input hidden="true" type="text" id="name" name="name" value="{{ name }}"/>
+			<table>
+				<tr>
+					<td><label for="title">title</label></td>
+					<td><input type="text" id="title" name="title" value="{{ title }}"/> </td>
+				</tr>
+				<tr>
+					<td><label for="style">style</label></td>
+					<td><textarea id="style" name="style" rows=10>{{ style }}</textarea></td>
+				</tr>
+				<tr>
+					<td><label for="desc">description</label></td>
+					<td><textarea id="desc" name="desc" rows=80>{{ desc }}</textarea></td>
+				</tr>
+				<tr>
+					<td><label for="password">password</label></td>
+					<td><input type="password" id="password" name="password"/></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="submit"/></td>
+				</tr>
+			</table>
+		</form>
+	</body>
+</html>

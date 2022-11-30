@@ -1,36 +1,18 @@
-import dataclasses
-import hashlib
-import secrets
 import sqlite3
 
 import flask
+import markdown
 
+import model
 
-SALT = b"mmmmsalty"
 
 app = flask.Flask(__name__)
-
-
-class Guest:
-    id: int
-    name: str
-    going: bool
-    salt: bytes
-    passhash: str
-
-
-def hash_password(salt: bytes, password: str):
-    hash_ = hashlib.sha256()
-    hash_.update(password.encode("utf-8"))
-    hash_.update(salt)
-    hash_.update(SALT)
-    return hash_.hexdigest()
 
 
 def get_db():
     if 'db' not in flask.g:
         flask.g.db = sqlite3.connect(
-            "guests.db",
+            "events.db",
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
         flask.g.db.row_factory = sqlite3.Row
@@ -50,78 +32,158 @@ def close_db(exception=None):
 
 @app.route("/")
 def home():
-    db = get_db()
-    with db:
-        guests = db.execute("SELECT * FROM guest").fetchall()
-
-    name = flask.request.args.get("name")
     error = flask.request.args.get("error")
-    comment = flask.request.args.get("comment")
-    going = flask.request.args.get("going", "True") != "False"
+    return flask.render_template("home.html", error=error)
 
-    print(guests)
+
+@app.route("/<name>")
+def event(name: str):
+    db = get_db()
+
+    try:
+        event = model.Events(db).get(name)
+    except LookupError:
+        return f"event {name!r} not found", 404
+
+    guests = model.Guests(db).get_all(event.id)
 
     return flask.render_template(
-        "home.html",
+        "event.html",
         name=name,
-        error=error,
-        comment=comment,
-        going=going,
-        attending=[
-            (guest["name"], guest["comment"])
-            for guest in guests if guest["going"]
-        ],
-        bailing=[
-            (guest["name"], guest["comment"])
-            for guest in guests if not guest["going"]
-        ],
+        title=event.title,
+        style=event.style,
+        desc=markdown.markdown(event.desc),
+        guestname=flask.request.args.get("guestname"),
+        guesterror=flask.request.args.get("error"),
+        guestcomment=flask.request.args.get("comment"),
+        guestgoing=flask.request.args.get("going", "True") != "False",
+        attending=[(guest.name, guest.comment) for guest in guests if guest.going],
     )
 
 
-@app.route("/api/guest", methods=["POST"])
-def guest():
+@app.route("/<name>/edit")
+def edit_event(name: str):
     db = get_db()
 
-    print(flask.request.form)
+    try:
+        event = model.Events(db).get(name)
+    except LookupError:
+        return f"event {name!r} not found", 404
+
+    return flask.render_template(
+        "edit.html",
+        name=name,
+        title=event.title,
+        style=event.style,
+        desc=event.desc,
+        error=flask.request.args.get("error"),
+    )
+
+
+@app.route("/api/event", methods=["POST"])
+def api_add_event():
+    name = flask.request.form["name"]
+
+    if not name:
+        url = flask.url_for("home", error="name must not be empty")
+        return flask.redirect(url), 400
+
+    events = model.Events(get_db())
+
+    try:
+        events.add(
+            name=name,
+            password=flask.request.form["password"],
+            style="",
+            title=name,
+            desc="# default event\n\nchange me"
+        )
+    except model.EventAlreadyExistsError:
+        url = flask.url_for(
+            "home", error="there is already an event with that name",
+        )
+        return flask.redirect(url), 400
+
+    url = flask.url_for("edit_event", name=name)
+    return flask.redirect(url)
+
+
+@app.route("/api/event/<name>", methods=["POST"])
+def api_update_event(name: str):
+    assert name
+
+    events = model.Events(get_db())
+    try:
+        events.update(
+            name=name,
+            password=flask.request.form["password"],
+            style=flask.request.form["style"],
+            title=flask.request.form["title"].strip(),
+            desc=flask.request.form["desc"],
+        )
+    except PermissionError:
+        url = flask.url_for("edit_event", name=name, error="bad password")
+        return flask.redirect(url), 401
+
+    url = flask.url_for("event", name=name)
+    return flask.redirect(url)
+
+
+@app.route("/api/guest", methods=["POST"])
+def api_add_or_update_guest():
+    event_name = flask.request.form["event"]
     name = flask.request.form["name"].strip()
     comment = flask.request.form["comment"].strip()
     going = flask.request.form["going"] == "going"
 
     if not name:
-        return flask.redirect(flask.url_for("home", name=name, going=going, comment=comment, error="name must not be empty"))
-
-    with db:
-        guest = db.execute(
-            "SELECT * FROM guest WHERE name = ?",
-            (name,),
-        ).fetchone()
-
-    if guest is None:
-        salt = secrets.token_bytes(4)
-        passhash = hash_password(
-            salt, flask.request.form["password"],
+        url = flask.url_for(
+            "event",
+            name=event_name,
+            guestname=name,
+            going=going,
+            comment=comment,
+            error="name must not be empty",
         )
+        return flask.redirect(url), 400
 
-        with db:
-            db.execute(
-                "INSERT INTO guest (name, going, comment, salt, passhash) VALUES (?, ?, ?, ?, ?)",
-                (name, going, comment, salt, passhash),
-            )
+    db = get_db()
 
-        return flask.redirect(flask.url_for("home", name=name, going=going, comment=comment))
-    else:
-        passhash = hash_password(guest["salt"], flask.request.form["password"])
-        if passhash == guest["passhash"]:
-            with db:
-                db.execute(
-                    "UPDATE guest SET going = ?, comment = ? WHERE name = ?",
-                    (going, comment, name),
-                )
+    events = model.Events(db)
+    try:
+        event = events.get(event_name)
+    except LookupError:
+        return f"no such event {event_name}", 400 
 
-            return flask.redirect(flask.url_for("home", name=name, going=going, comment=comment))
-        else:
-            return flask.redirect(flask.url_for("home", name=name, going=going, comment=comment, error="bad password"))
+    guest_table = model.Guests(db)
 
+    try:
+        guest_table.add_or_update(
+            event_id=event.id,
+            name=name,
+            password=flask.request.form["password"],
+            going=going,
+            comment=comment,
+        )
+    except PermissionError:
+        url = flask.url_for(
+            "event",
+            name=event_name,
+            guestname=name,
+            going=going,
+            comment=comment,
+            error="bad password",
+        )
+        return flask.redirect(url), 401
+
+    url = flask.url_for(
+        "event",
+        name=event_name,
+        guestname=name,
+        going=going,
+        comment=comment,
+    )
+    return flask.redirect(url)
 
 
 if __name__ == "__main__":

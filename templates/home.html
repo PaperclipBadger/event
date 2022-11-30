@@ -1,60 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>come to my party</title>
-		<style>
-		body { background-color: black; color: lime }
-		td:first-child { text-align: right }
-		ol li { padding: 1em }
-		a { color: white }
-		</style>
 		<meta charset="utf-8"/>
+		<title>event</title>
 	</head>
 	<body>
-		<!--
-		oho, reading the source code are we
-		l33t h4ckerz get a special cocktail, ask Blaine for a crunchbang
-		-->
-		<h1>i’m bringing high concept house parties to Tokyo and you’re invited</h1>
+		<!-- maybe if you ask Blaine nicely you can see the source code -->
+		<h1>event</h1>
 
-		<h2>when: 2022-11-05 @ 4pm</h2>
+		This is an events platform, like facebook events.
+		You can create an event, and people can RSVP.
+		You don't need to create an account to do either of these things.
 
-		<p>start early so you can party hard and still catch the last train home</p>
+		<h2>create an event</h2>
 
-		<h2>where: Sasazuka 笹塚</h2>
-		
-		<p>ask Blaine for his address, he's not about to doxx himself<p>
-
-		<h2>rsvp</h2>
-
-		<p>please fill in the form below to indicate whether you're coming.
-		set a password.
-		you can change your response later by using the same name and password.
-		leave a comment if you like!
-		comments are visible to everyone.</p>
-		<!-- passwords are stored hashed and salted
-		but then again, you have only my word for that ;)
-		maybe don't reuse your usual password here
-		-->
+		<p>
+		Choose a name and password.
+		Names must be unique across all events (it determines the URL).
+		You can use the password later to edit the event description etc.
+		Passwords are stored hashed and salted; but then again, you have only my word for that.
+		Maybe don't reuse your usual passwords here 😉
+		</p>
 
 		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
-		<form action="/api/guest" method="POST">
+
+		<form action="/api/event" method="POST">
 			<table>
 				<tr>
 					<td><label for="name">name</label></td>
-					<td><input type="text" id="name" name="name" {% if name %}value="{{ name }}"{% endif %}/> </td>
-				</tr>
-				<tr>
-					<td><label for="going">going</label></td>
-					<td><input type="radio" id="going" name="going" value="going" {% if going %}checked="checked"{% endif %}/></td>
-				</tr>
-				<tr>
-					<td><label for="not-going">not going</label></td>
-					<td><input type="radio" id="not-going" name="going" value="not going" {% if not going %}checked="checked"{% endif %}/></td>
-				</tr>
-				<tr>
-					<td><label for="comment">comment</label></td>
-					<td><input type="text" id="comment" name="comment"{% if comment %}value="{{ comment }}"{% endif %}/></td>
+					<td><input type="text" id="name" name="name"/> </td>
 				</tr>
 				<tr>
 					<td><label for="password">password</label></td>
@@ -66,92 +40,5 @@
 				</tr>
 			</table>
 		</form>
-
-		<h2>these cool cats are coming</h2>
-		<ul>
-			{% for name, comment in attending %}
-			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
-			{% endfor %}
-		</ul>
-
-		<h2>these cool cats are bailing</h2>
-		<ul>
-			{% for name, comment in bailing %}
-			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
-			{% endfor %}
-		</ul>
-
-		<h2>a message arrives. a strange url you've never seen before. your finger trembles as you reach to click...</h2>
-		<p>whoosh! zoom! you're enveloped in a whirlwind of default fonts and crunchy css.
-		in the flick-open of an antique pocketwatch, you've been sent back in time.
-		you look out the window. through the pouring rain and neon haze, you see a man in mirrorshades glance around furtively before spilling ramen on himself. the sky is the colour of television tuned to a dead channel.
-		welcome to the 90s.</p>
-
-		<p>just then, your phone rings. a thick accent tells you to follow the white rabbit. you hang up. on your way to the konbini, you see a girl with a rabbit tattoo disappear into a metro station. you tail her all the way to the top floor of an apartment block on the outskirts of Shibuya. you hear laughter and eurobeat from the other side of the door. it opens before you can knock.</p>
-		
-		<p>"what's the shibboleth?"</p>
-
-		<p>damn, you hadn't thought this far ahead. maybe if you read the rules carefully you'll find a hint...</p>
-
-		<pre>
-             ,\
-             \\\,_
-              \` ,\
-         __,.-" =__)
-       ."        )
-    ,_/   ,    \/\_
-    \_|    )_-\ \_-`
-       `-----` `--`
-		</pre>
-
-		<h2>costume theme: ironic 90s dystopia</h3>
-
-		<p>every high concept house party has a costume theme, and this one is no exception.
-		if you have a great idea, by all means go hard.
-		otherwise, minimal effort is fine.
-		</p>
-	
-		<p>ideas:</p>
-		<ul>
-			<li>mirrored sunglasses</li>
-			<li>climate activist</li>
-			<li>cyberpunk</li>
-			<li>your halloween costume, but this time it's your hacker persona</li>
-			<li>maid costume @simon</li>
-		</ul>
-
-		<h2>events</h2>
-		<h3>organised fun at regular intervals</h3>
-
-		<p>at regular intervals, we'll set up a spare room for organised fun.
-		events I might throw:
-		</p>
-
-		<ul>
-			<li>life drawing</li>
-			<li>cheese tasting</li>
-			<li>cupboard of feelings</li>
-			<li>lightning symposium</li>
-			<li>and more!</li>
-		</ul>
-
-		<p>have cool skills you want to show off, or something you can teach? volunteer yourself as tribute!</p>
-
-		<h2>rules</h2>
-
-		<ol>
-			<li><b>RATION THE PASSION:</b><br>i’ll have a fridge full of booze but if you drink it all and pass out i won’t carry you home</li>
-			<li><b>CONSENT IS SEXY:</b><br>pay attention to body language, anything other than a fuck yeah is a fuck no</li>
-			<li><b>THE MORE THE MERRIER:</b><br>i’m new to tokyo, i want to meet your cool friends. send them <a href="/">this link</a> so they can read the rules and rsvp!</li> 
-			<li><b>隣さんに迷惑しな:</b><br>if the party’s still popping at 23:30, we’ll migrate to a club so as not to bother my neighbours</li>
-		</ol>
-
-		<h2>tips & tricks</h2>
-
-		<ul>
-			<li>bring snacks! my kitchen isn't big enough to cook for all of you.</li>
-			<li>bring booze! the more we have, the fewer trips to the konbini we'll make.</li>
-			<li>the shibboleth is "neuromancer". Blaine will ask you for this on the door to check you've read the rules!</li>
-		</ul>
 	</body>
 </html>
