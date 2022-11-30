@@ -6,7 +6,13 @@
 		<style>{{ style | safe }}</style>
 	</head>
 	<body>
-		<a id="editlink" href="{{ url_for('edit_event', name=name) }}">edit this event</a>
+		<p>
+			<a id="editlink" href="{{ url_for('edit_event', name=name) }}">edit</a>
+			or
+			<a id="editlink" href="{{ url_for('delete_event', name=name) }}">delete</a>
+			this event
+		</p>
+
 		{{ desc | safe }}
 
 		<h2>these cool cats are coming</h2>

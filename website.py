@@ -81,6 +81,22 @@ def edit_event(name: str):
     )
 
 
+@app.route("/<name>/delete")
+def delete_event(name: str):
+    db = get_db()
+
+    try:
+        event = model.Events(db).get(name)
+    except LookupError:
+        return f"event {name!r} not found", 404
+
+    return flask.render_template(
+        "delete.html",
+        name=name,
+        error=flask.request.args.get("error"),
+    )
+
+
 @app.route("/api/event", methods=["POST"])
 def api_add_event():
     name = flask.request.form["name"]
@@ -122,11 +138,32 @@ def api_update_event(name: str):
             title=flask.request.form["title"].strip(),
             desc=flask.request.form["desc"],
         )
+    except LookupError:
+        url = flask.url_for("edit_event", name=name, error=f"no such event {name!r}")
+        return flask.redirect(url), 401
     except PermissionError:
         url = flask.url_for("edit_event", name=name, error="bad password")
         return flask.redirect(url), 401
 
     url = flask.url_for("event", name=name)
+    return flask.redirect(url)
+
+
+@app.route("/api/event/<name>/delete", methods=["POST"])
+def api_delete_event(name: str):
+    assert name
+
+    events = model.Events(get_db())
+    try:
+        events.delete(name=name, password=flask.request.form["password"])
+    except LookupError:
+        url = flask.url_for("delete_event", name=name, error=f"no such event {name!r}")
+        return flask.redirect(url), 401
+    except PermissionError:
+        url = flask.url_for("delete_event", name=name, error="bad password")
+        return flask.redirect(url), 401
+
+    url = flask.url_for("home")
     return flask.redirect(url)
 
 

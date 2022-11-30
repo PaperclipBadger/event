@@ -39,11 +39,6 @@ def hash_password(salt: bytes, password: str):
     return hash_.hexdigest()
 
 
-class PermissionError(Exception):
-    """Raised on password check failure."""
-    pass
-
-
 class EventAlreadyExistsError(Exception):
     pass
 
@@ -175,7 +170,7 @@ class Events:
             salt = secrets.token_bytes(4)
             passhash = hash_password(salt, password)
             self.db.execute(
-                "INSERT INTO event "
+                "INSERT INTO event"
                 " (eventname, eventsalt, eventpasshash, eventstyle, eventtitle, eventdesc)"
                 " VALUES (?, ?, ?, ?, ?, ?)",
                 (name, salt, passhash, style, title, desc),
@@ -197,10 +192,21 @@ class Events:
         passhash = hash_password(event.salt, password)
         if passhash == event.passhash:
             self.db.execute(
-                "UPDATE event "
+                "UPDATE event"
                 " SET eventtitle = ?, eventstyle = ?, eventdesc = ?"
                 " WHERE eventname = ?",
                 (title, style, desc, name),
             )
+        else:
+            raise PermissionError(f"bad password for event {event!r}")
+    
+    @with_db
+    def delete(self, name: str, password: str) -> None:
+        event = self.get(name)
+
+        passhash = hash_password(event.salt, password)
+
+        if passhash == event.passhash:
+            self.db.execute("DELETE FROM event WHERE eventname = ?", (name,))
         else:
             raise PermissionError(f"bad password for event {event!r}")
