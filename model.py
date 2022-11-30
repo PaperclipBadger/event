@@ -1,3 +1,4 @@
+from typing import List
 import dataclasses
 import functools
 import hashlib
@@ -78,7 +79,7 @@ class Guests:
             return Guest(**dict_)
     
     @with_db
-    def get_all(self, event_id: int) -> list[Guest]:
+    def get_all(self, event_id: int) -> List[Guest]:
         cursor = self.db.execute(
             "SELECT * FROM guest WHERE guestevent = ?",
             (event_id,),
@@ -144,7 +145,7 @@ class Events:
             return Event(**dict_)
     
     @with_db
-    def get_all(self) -> list[Event]:
+    def get_all(self) -> List[Event]:
         cursor = self.db.execute("SELECT * FROM event")
         rows = cursor.fetchall()
 
