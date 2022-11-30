@@ -15,13 +15,6 @@
 
 		{{ desc | safe }}
 
-		<h2>these cool cats are coming</h2>
-		<ul>
-			{% for name, comment in attending %}
-			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
-			{% endfor %}
-		</ul>
-
 		<h2>RSVP</h2>
 
 		<p>Fill in the form below to indicate whether you're coming.
@@ -64,5 +57,12 @@
 				</tr>
 			</table>
 		</form>
+
+		<h2>these cool cats are coming</h2>
+		<ul>
+			{% for name, comment in attending %}
+			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% endfor %}
+		</ul>
 	</body>
 </html>
