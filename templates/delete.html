@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>delete "{{ name }}"?</title>
+	</head>
+	<body>
+		<h1>delete "{{ name }}"?</h1>
+
+	 	<a href="{{ url_for('event', name=name) }}">view the event</a>
+
+		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
+		<form action="/api/event/{{ name }}/delete" method="POST">
+			<input hidden="true" type="text" id="name" name="name" value="{{ name }}"/>
+			<table>
+				<tr>
+					<td><label for="password">password</label></td>
+					<td><input type="password" id="password" name="password"/></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="send it to the shadow realm"/></td>
+				</tr>
+			</table>
+		</form>
+	</body>
+</html>
