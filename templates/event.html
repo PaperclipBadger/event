@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8"/>
 		<title>{{ title }}</title>
+		<style>body { max-width: 600px; margin: auto }</style>
 		<style>{{ style | safe }}</style>
 	</head>
 	<body>
@@ -28,8 +29,7 @@
 		-->
 
 		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
-		<form action="/api/guest" method="POST">
-			<input hidden="true" type="text" id="event" name="event" value="{{ name }}"/>
+		<form action="/api/event/{{ name }}/guest" method="POST">
 			<table>
 				<tr>
 					<td><label for="name">name</label></td>
@@ -60,16 +60,24 @@
 		{% if attending %}
 		<h2>these cool cats are coming</h2>
 		<ul>
-			{% for name, comment in attending %}
-			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% for guest_name, comment in attending %}
+			<li>
+				{{ guest_name }}{% if comment %}: "{{ comment }}"{% endif %}
+				<a href="{{ url_for('edit_guest', event_name=name, name=guest_name) }}">edit</a>
+				<a href="{{ url_for('delete_guest', event_name=name, name=guest_name) }}">delete</a>
+			</li>
 			{% endfor %}
 		</ul>
 		{% endif %}
 		{% if bailing %}
 		<h2>these cool cats are bailing</h2>
 		<ul>
-			{% for name, comment in bailing %}
-			<li>{{ name }}{% if comment %}: "{{ comment }}"{% endif %}</li>
+			{% for guest_name, comment in bailing %}
+			<li>
+				{{ guest_name }}{% if comment %}: "{{ comment }}"{% endif %}
+				<a href="{{ url_for('edit_guest', event_name=name, name=guest_name) }}">edit</a>
+				<a href="{{ url_for('delete_guest', event_name=name, name=guest_name) }}">delete</a>
+			</li>
 			{% endfor %}
 		</ul>
 		{% endif %}

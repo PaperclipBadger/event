@@ -73,7 +73,7 @@ def edit_event(name: str):
         return f"event {name!r} not found", 404
 
     return flask.render_template(
-        "edit.html",
+        "edit_event.html",
         name=name,
         title=event.title,
         style=event.style,
@@ -92,35 +92,84 @@ def delete_event(name: str):
         return f"event {name!r} not found", 404
 
     return flask.render_template(
-        "delete.html",
+        "delete_event.html",
         name=name,
+        style=event.style,
+        error=flask.request.args.get("error"),
+    )
+
+
+@app.route("/<event_name>/<name>")
+def edit_guest(event_name: str, name: str):
+    db = get_db()
+
+    try:
+        event = model.Events(db).get(event_name)
+    except LookupError:
+        return f"event {event_name!r} not found", 404
+    
+    try:
+        guest = model.Guests(db).get(event.id, name)
+    except LookupError:
+        return f"guest {name!r} for event {event_name!r} not found", 404
+
+    return flask.render_template(
+        "edit_guest.html",
+        event_name=event.name,
+        style=event.style,
+        name=guest.name,
+        going=guest.going,
+        comment=guest.comment,
+        error=flask.request.args.get("error"),
+    )
+
+
+@app.route("/<event_name>/<name>/delete")
+def delete_guest(event_name: str, name: str):
+    db = get_db()
+
+    try:
+        event = model.Events(db).get(event_name)
+    except LookupError:
+        return f"event {event_name!r} not found", 404
+    
+    try:
+        guest = model.Guests(db).get(event.id, name)
+    except LookupError:
+        return f"guest {name!r} for event {event_name!r} not found", 404
+
+    return flask.render_template(
+        "delete_guest.html",
+        event_name=event.name,
+        style=event.style,
+        name=guest.name,
         error=flask.request.args.get("error"),
     )
 
 
 @app.route("/api/event", methods=["POST"])
-def api_add_event():
+def api_create_event():
     name = flask.request.form["name"]
 
     if not name:
         url = flask.url_for("home", error="name must not be empty")
-        return flask.redirect(url), 400
+        return flask.redirect(url)
 
     events = model.Events(get_db())
 
     try:
-        events.add(
+        events.create(
             name=name,
             password=flask.request.form["password"],
             style="",
             title=name,
             desc="# default event\n\nchange me"
         )
-    except model.EventAlreadyExistsError:
+    except model.AlreadyExistsError:
         url = flask.url_for(
             "home", error="there is already an event with that name",
         )
-        return flask.redirect(url), 400
+        return flask.redirect(url)
 
     url = flask.url_for("edit_event", name=name)
     return flask.redirect(url)
@@ -128,7 +177,8 @@ def api_add_event():
 
 @app.route("/api/event/<name>", methods=["POST"])
 def api_update_event(name: str):
-    assert name
+    if not name:
+        return "not found", 404
 
     events = model.Events(get_db())
     try:
@@ -140,11 +190,11 @@ def api_update_event(name: str):
             desc=flask.request.form["desc"],
         )
     except LookupError:
-        url = flask.url_for("edit_event", name=name, error=f"no such event {name!r}")
-        return flask.redirect(url), 401
+        url = flask.url_for("home")
+        return flask.redirect(url)
     except PermissionError:
         url = flask.url_for("edit_event", name=name, error="bad password")
-        return flask.redirect(url), 401
+        return flask.redirect(url)
 
     url = flask.url_for("event", name=name)
     return flask.redirect(url)
@@ -152,25 +202,28 @@ def api_update_event(name: str):
 
 @app.route("/api/event/<name>/delete", methods=["POST"])
 def api_delete_event(name: str):
-    assert name
+    if not name:
+        return "not found", 404
 
     events = model.Events(get_db())
     try:
         events.delete(name=name, password=flask.request.form["password"])
     except LookupError:
-        url = flask.url_for("delete_event", name=name, error=f"no such event {name!r}")
-        return flask.redirect(url), 401
+        url = flask.url_for("home")
+        return flask.redirect(url)
     except PermissionError:
         url = flask.url_for("delete_event", name=name, error="bad password")
-        return flask.redirect(url), 401
+        return flask.redirect(url)
 
     url = flask.url_for("home")
     return flask.redirect(url)
 
 
-@app.route("/api/guest", methods=["POST"])
-def api_add_or_update_guest():
-    event_name = flask.request.form["event"]
+@app.route("/api/event/<event_name>/guest", methods=["POST"])
+def api_create_guest(event_name: str):
+    if not event_name:
+        return "not found", 404
+
     name = flask.request.form["name"].strip()
     comment = flask.request.form["comment"].strip()
     going = flask.request.form["going"] == "going"
@@ -184,7 +237,7 @@ def api_add_or_update_guest():
             comment=comment,
             error="name must not be empty",
         )
-        return flask.redirect(url), 400
+        return flask.redirect(url)
 
     db = get_db()
 
@@ -192,28 +245,28 @@ def api_add_or_update_guest():
     try:
         event = events.get(event_name)
     except LookupError:
-        return f"no such event {event_name}", 400 
+        return f"no such event {event_name}", 404
 
     guest_table = model.Guests(db)
 
     try:
-        guest_table.add_or_update(
+        guest_table.create(
             event_id=event.id,
             name=name,
             password=flask.request.form["password"],
             going=going,
             comment=comment,
         )
-    except PermissionError:
+    except model.AlreadyExistsError:
         url = flask.url_for(
             "event",
             name=event_name,
             guestname=name,
             going=going,
             comment=comment,
-            error="bad password",
+            error="there is already a guest with that name",
         )
-        return flask.redirect(url), 401
+        return flask.redirect(url)
 
     url = flask.url_for(
         "event",
@@ -222,6 +275,85 @@ def api_add_or_update_guest():
         going=going,
         comment=comment,
     )
+    return flask.redirect(url)
+
+
+@app.route("/api/event/<event_name>/guest/<name>", methods=["POST"])
+def api_update_guest(event_name: str, name: str):
+    if not event_name or not name:
+        return "not found", 404
+
+    comment = flask.request.form["comment"].strip()
+    going = flask.request.form["going"] == "going"
+
+    db = get_db()
+
+    events = model.Events(db)
+    try:
+        event = events.get(event_name)
+    except LookupError:
+        return f"no such event {event_name}", 404
+
+    guest_table = model.Guests(db)
+
+    try:
+        guest_table.update(
+            event_id=event.id,
+            name=name,
+            password=flask.request.form["password"],
+            going=going,
+            comment=comment,
+        )
+    except PermissionError:
+        url = flask.url_for(
+            "edit_guest",
+            event_name=event_name,
+            name=name,
+            error="bad password",
+        )
+        return flask.redirect(url)
+    except LookupError as e:
+        url = flask.url_for("event", name=event_name)
+        return flask.redirect(url)
+
+    url = flask.url_for("event", name=event_name)
+    return flask.redirect(url)
+
+
+@app.route("/api/event/<event_name>/guest/<name>/delete", methods=["POST"])
+def api_delete_guest(event_name: str, name: str):
+    if not event_name or not name:
+        return "not found", 404
+
+    db = get_db()
+
+    events = model.Events(db)
+    try:
+        event = events.get(event_name)
+    except LookupError:
+        return f"no such event {event_name}", 404
+
+    guest_table = model.Guests(db)
+
+    try:
+        guest_table.delete(
+            event_id=event.id,
+            name=name,
+            password=flask.request.form["password"],
+        )
+    except PermissionError:
+        url = flask.url_for(
+            "delete_guest",
+            event_name=event_name,
+            name=name,
+            error="bad password",
+        )
+        return flask.redirect(url)
+    except LookupError as e:
+        url = flask.url_for("event", name=event_name)
+        return flask.redirect(url)
+
+    url = flask.url_for("event", name=event_name)
     return flask.redirect(url)
 
 

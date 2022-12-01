@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8"/>
 		<title>event</title>
+		<style>body { max-width: 600px; margin: auto }</style>
 	</head>
 	<body>
 		<!-- maybe if you ask Blaine nicely you can see the source code -->
@@ -10,15 +11,6 @@
 
 		This is an events platform, like facebook events.
 		You can create an event, and people can RSVP.
-		You don't need to create an account to do either of these things.
-
-		<h2>existing events</h2>
-
-		<ul>
-		{% for event in events %}
-		  <li><a href="{{ url_for('event', name=event.name) }}">{{ event.title }}</a></li>
-		{% endfor %}
-		</ul>
 
 		<h2>create an event</h2>
 
@@ -48,5 +40,15 @@
 				</tr>
 			</table>
 		</form>
+
+		{% if events %}
+		<h2>existing events</h2>
+
+		<ul>
+		{% for event in events %}
+		  <li><a href="{{ url_for('event', name=event.name) }}">{{ event.title }}</a></li>
+		{% endfor %}
+		</ul>
+		{% endif %}
 	</body>
 </html>

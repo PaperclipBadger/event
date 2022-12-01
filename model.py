@@ -39,7 +39,7 @@ def hash_password(salt: bytes, password: str):
     return hash_.hexdigest()
 
 
-class EventAlreadyExistsError(Exception):
+class AlreadyExistsError(Exception):
     pass
 
 
@@ -65,7 +65,7 @@ class Guests:
         row = cursor.fetchone()
 
         if row is None:
-            raise LookupError(f"no guest with name {name}")
+            raise LookupError(f"no guest with name {name} for event {event_id}")
         else:
             dict_ = {
                 field.name: row["guest" + field.name]
@@ -93,7 +93,7 @@ class Guests:
         return guests
 
     @with_db
-    def add_or_update(
+    def create(
         self, event_id: int, name: str, password: str, going: bool, comment: str,
     ) -> None:
         try:
@@ -108,16 +108,38 @@ class Guests:
                 (name, event_id, going, comment, salt, passhash),
             )
         else:
-            passhash = hash_password(guest.salt, password)
-            if passhash == guest.passhash:
-                self.db.execute(
-                    "UPDATE guest"
-                    " SET guestgoing = ?, guestcomment = ?"
-                    " WHERE guestname = ? AND guestevent = ?",
-                    (going, comment, name, event_id),
-                )
-            else:
-                raise PermissionError(f"bad password for guest {name!r} of event {event_id!r}")
+            raise AlreadyExistsError(f"guest {name} of event {event_id} already exists")
+        
+    @with_db
+    def update(
+        self, event_id: int, name: str, password: str, going: bool, comment: str,
+    ) -> None:
+        guest = self.get(event_id, name)
+
+        passhash = hash_password(guest.salt, password)
+        if passhash == guest.passhash:
+            self.db.execute(
+                "UPDATE guest"
+                " SET guestgoing = ?, guestcomment = ?"
+                " WHERE guestname = ? AND guestevent = ?",
+                (going, comment, name, event_id),
+            )
+        else:
+            raise PermissionError(f"bad password for guest {name} of event {event_id}")
+
+    @with_db
+    def delete(self, event_id: int, name: str, password: str) -> None:
+        guest = self.get(event_id, name)
+
+        passhash = hash_password(guest.salt, password)
+        if passhash == guest.passhash:
+            self.db.execute(
+                "DELETE FROM guest"
+                " WHERE guestname = ? AND guestevent = ?",
+                (name, event_id),
+            )
+        else:
+            raise PermissionError(f"bad password for guest {name} of event {event_id}")
 
 
 @dataclasses.dataclass
@@ -156,7 +178,7 @@ class Events:
         return events
     
     @with_db
-    def add(
+    def create(
         self,
         name: str,
         password: str,
@@ -176,7 +198,7 @@ class Events:
                 (name, salt, passhash, style, title, desc),
             )
         else:
-            raise EventAlreadyExistsError
+            raise AlreadyExistsError
     
     @with_db
     def update(

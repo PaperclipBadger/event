@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>edit guest "{{ name }}" of "{{ event_name }}"</title>
+		<style>body { max-width: 600px; margin: auto }</style>
+		<style>{{ style | safe }}</style>
+	</head>
+	<body>
+		<h1>edit guest "{{ name }}" of "{{ event_name }}"</h1>
+
+	 	<a href="{{ url_for('event', name=event_name) }}">view the event</a>
+
+		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
+		<form action="/api/event/{{ event_name }}/guest/{{ name }}" method="POST">
+			<table>
+				<tr>
+					<td><label for="name">name</label></td>
+					<td>{{ name }}</td>
+				</tr>
+				<tr>
+					<td><label for="going">going</label></td>
+					<td><input type="radio" id="going" name="going" value="going" {% if going %}checked="checked"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="not-going">not going</label></td>
+					<td><input type="radio" id="not-going" name="going" value="not going" {% if not going %}checked="checked"{% endif %}/></td>
+				</tr>
+				<tr>
+					<td><label for="comment">comment</label></td>
+					<td><input type="text" id="comment" name="comment" value="{{ comment }}"/></td>
+				</tr>
+				<tr>
+					<td><label for="password">password</label></td>
+					<td><input type="password" id="password" name="password"/></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="submit"/></td>
+				</tr>
+			</table>
+		</form>
+	</body>
+</html>
