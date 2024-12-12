@@ -10,8 +10,10 @@
 		<p>
 			<a id="editlink" href="{{ url_for('edit_event', name=name) }}">edit</a>
 			or
-			<a id="editlink" href="{{ url_for('delete_event', name=name) }}">delete</a>
-			this event
+			<a id="deletelink" href="{{ url_for('delete_event', name=name) }}">delete</a>
+			this event |
+			<a id="returnlink" href="{{ url_for('home', name=name) }}">return</a>
+			to list of events
 		</p>
 
 		{{ desc | safe }}
