@@ -15,6 +15,7 @@ except FileNotFoundError:
     print("!!! WARNING: ADMIN PASSWORD NOT SET !!!")
     ADMIN_PASSHASH = ""
 
+
 @dataclasses.dataclass
 class Event:
     id: int
@@ -123,7 +124,7 @@ class Guests:
         guest = self.get(event_id, name)
 
         passhash = hash_password(guest.salt, password)
-        if passhash == guest.passhash or passhash == ADMIN_PASSHASH:
+        if passhash == guest.passhash:
             self.db.execute(
                 "UPDATE guest"
                 " SET guestgoing = ?, guestcomment = ?"
@@ -138,7 +139,7 @@ class Guests:
         guest = self.get(event_id, name)
 
         passhash = hash_password(guest.salt, password)
-        if passhash == guest.passhash or passhash == ADMIN_PASSHASH:
+        if passhash == guest.passhash:
             self.db.execute(
                 "DELETE FROM guest"
                 " WHERE guestname = ? AND guestevent = ?",
@@ -218,7 +219,7 @@ class Events:
         event = self.get(name)
 
         passhash = hash_password(event.salt, password)
-        if passhash == event.passhash or passhash == ADMIN_PASSHASH:
+        if passhash == event.passhash:
             self.db.execute(
                 "UPDATE event"
                 " SET eventtitle = ?, eventstyle = ?, eventdesc = ?"
@@ -234,7 +235,7 @@ class Events:
 
         passhash = hash_password(event.salt, password)
 
-        if passhash == event.passhash or passhash == ADMIN_PASSHASH:
+        if passhash == event.passhash:
             self.db.execute("DELETE FROM event WHERE eventname = ?", (name,))
         else:
             raise PermissionError(f"bad password for event {event!r}")
