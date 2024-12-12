@@ -237,5 +237,6 @@ class Events:
 
         if passhash == event.passhash:
             self.db.execute("DELETE FROM event WHERE eventname = ?", (name,))
+            self.db.execute("DELETE FROM guest WHERE guestevent = ?", (event.id))
         else:
             raise PermissionError(f"bad password for event {event!r}")
