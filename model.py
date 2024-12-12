@@ -8,8 +8,12 @@ import sqlite3
 
 SALT = b"mmmmsalty"
 
-with open("adminpw.hash") as f:
-    ADMIN_PASSHASH = f.read().strip()
+try:
+    with open("adminpw.hash") as f:
+        ADMIN_PASSHASH = f.read().strip()
+except FileNotFoundError:
+    print("!!! WARNING: ADMIN PASSWORD NOT SET !!!")
+    ADMIN_PASSHASH = ""
 
 @dataclasses.dataclass
 class Event:
