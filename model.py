@@ -8,6 +8,8 @@ import sqlite3
 
 SALT = b"mmmmsalty"
 
+with open("adminpw.hash") as f:
+    ADMIN_PASSHASH = f.read().strip()
 
 @dataclasses.dataclass
 class Event:
@@ -117,7 +119,7 @@ class Guests:
         guest = self.get(event_id, name)
 
         passhash = hash_password(guest.salt, password)
-        if passhash == guest.passhash:
+        if passhash == guest.passhash or passhash == ADMIN_PASSHASH:
             self.db.execute(
                 "UPDATE guest"
                 " SET guestgoing = ?, guestcomment = ?"
@@ -132,7 +134,7 @@ class Guests:
         guest = self.get(event_id, name)
 
         passhash = hash_password(guest.salt, password)
-        if passhash == guest.passhash:
+        if passhash == guest.passhash or passhash == ADMIN_PASSHASH:
             self.db.execute(
                 "DELETE FROM guest"
                 " WHERE guestname = ? AND guestevent = ?",
@@ -212,7 +214,7 @@ class Events:
         event = self.get(name)
 
         passhash = hash_password(event.salt, password)
-        if passhash == event.passhash:
+        if passhash == event.passhash or passhash == ADMIN_PASSHASH:
             self.db.execute(
                 "UPDATE event"
                 " SET eventtitle = ?, eventstyle = ?, eventdesc = ?"
@@ -228,7 +230,7 @@ class Events:
 
         passhash = hash_password(event.salt, password)
 
-        if passhash == event.passhash:
+        if passhash == event.passhash or passhash == ADMIN_PASSHASH:
             self.db.execute("DELETE FROM event WHERE eventname = ?", (name,))
         else:
             raise PermissionError(f"bad password for event {event!r}")
