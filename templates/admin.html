@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<title>admin</title>
+		<style>body { max-width: 600px; margin: auto }</style>
+	</head>
+	<body>
+		<h1>admin</h1>
+
+		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
+		<form action="{{ url_for('api_admin') }}" method="POST">
+			<table>
+				<tr>
+					<td><label for="password">password</label></td>
+					<td><input type="password" id="password" name="password"/></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="escalate privileges"/></td>
+				</tr>
+			</table>
+		</form>
+	</body>
+</html>

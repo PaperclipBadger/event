@@ -10,6 +10,13 @@ import sqlite3
 SALT = b"mmmmsalty"
 TOKEN_LIFETIME_DAYS = 1
 
+try:
+    with open("admin.passhash") as f:
+        ADMIN_PASSHASH = f.read().strip()
+except FileNotFoundError:
+    print("!!! WARNING: ADMIN PASSHASH NOT FOUND !!!")
+    ADMIN_PASSHASH = ""
+
 
 @dataclasses.dataclass
 class Event:
@@ -37,6 +44,7 @@ class Guest:
 class Token:
     id: int
     name: str  # unique
+    admin: bool
     expires: str
 
 
@@ -120,7 +128,7 @@ class Guests:
             raise AlreadyExistsError(f"guest {name} of event {event_id} already exists")
 
     @with_db
-    def approve_token(self, event_id: int, name: str, token_id: int, password: str) -> None:
+    def approve_token(self, event_id: int, name: str, token: Token, password: str) -> None:
         guest = self.get(event_id, name)
 
         passhash = hash_password(guest.salt, password)
@@ -129,22 +137,22 @@ class Guests:
                 "INSERT INTO guesttoken"
                 " (guesttokentoken, guesttokenguest)"
                 " VALUES (?, ?)",
-                (token_id, guest.id),
+                (token.id, guest.id),
             )
         else:
             raise PermissionError(f"bad password for guest {guest!r}")
     
     @with_db
-    def check_token(self, event_id: int, name: str, token_id: int) -> bool:
+    def check_token(self, event_id: int, name: str, token: Token) -> bool:
         guest = self.get(event_id, name)
 
         cursor = self.db.execute(
             "SELECT * FROM guesttoken"
             " WHERE guesttokenguest = ? AND guesttokentoken = ?",
-            (guest.id, token_id),
+            (guest.id, token.id),
         )
         row = cursor.fetchone()
-        return row is not None
+        return row is not None or token.admin
 
     @with_db
     def update(
@@ -231,7 +239,7 @@ class Events:
             raise AlreadyExistsError
 
     @with_db
-    def approve_token(self, name: str, token_id: int, password: str) -> None:
+    def approve_token(self, name: str, token: Token, password: str) -> None:
         event = self.get(name)
 
         passhash = hash_password(event.salt, password)
@@ -240,22 +248,22 @@ class Events:
                 "INSERT INTO eventtoken"
                 " (eventtokentoken, eventtokenevent)"
                 " VALUES (?, ?)",
-                (token_id, event.id),
+                (token.id, event.id),
             )
         else:
             raise PermissionError(f"bad password for event {event!r}")
     
     @with_db
-    def check_token(self, name: str, token_id: int) -> bool:
+    def check_token(self, name: str, token: Token) -> bool:
         event = self.get(name)
 
         cursor = self.db.execute(
             "SELECT * FROM eventtoken"
             " WHERE eventtokenevent = ? AND eventtokentoken = ?",
-            (event.id, token_id),
+            (event.id, token.id),
         )
         row = cursor.fetchone()
-        return row is not None
+        return row is not None or token.admin
 
     @with_db
     def update(
@@ -300,6 +308,7 @@ class Tokens:
             return Token(
                 id=row["tokenid"],
                 name=row["tokenname"],
+                admin=row["tokenadmin"],
                 expires=datetime.datetime.fromisoformat(row["tokenexpires"]),
             )
 
@@ -312,16 +321,16 @@ class Tokens:
         except LookupError:
             self.db.execute(
                 "INSERT INTO token"
-                " (tokenname, tokenexpires)"
-                " VALUES (?, ?)",
-                (name, expires.isoformat()),
+                " (tokenname, tokenadmin, tokenexpires)"
+                " VALUES (?, ?, ?)",
+                (name, False, expires.isoformat()),
             )
         else:
             raise AlreadyExistsError
     
     @with_db
-    def update(self, name: str) -> None:
-        expires = datetime.datetime.now() + datetime.timedelta(days=1)
+    def refresh(self, name: str) -> None:
+        expires = datetime.datetime.now() + datetime.timedelta(days=TOKEN_LIFETIME_DAYS)
 
         self.get(name)
 
@@ -331,6 +340,21 @@ class Tokens:
             " WHERE tokenname = ?",
             (expires.isoformat(), name),
         )
+
+    @with_db
+    def set_admin(self, name: str, password: str) -> None:
+        self.get(name)
+
+        passhash = hash_password(SALT, password)
+        if passhash == ADMIN_PASSHASH:
+            self.db.execute(
+                "UPDATE token"
+                " SET tokenadmin = ?"
+                " WHERE tokenname = ?",
+                (True, name),
+            )
+        else:
+            raise PermissionError(f"bad admin password")
 
     @with_db
     def delete(self, name: str) -> None:

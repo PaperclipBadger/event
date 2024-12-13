@@ -38,11 +38,13 @@ def get_token(db) -> model.Token:
     tokens = model.Tokens(db)
     name = flask.request.cookies.get("token", "")
     token = tokens.get(name)
+
     if token.expires < datetime.datetime.now():
         tokens.delete(name)
-        print("EXPIRED")
-        raise LookupError("token expired")
-    return token
+    else:
+        tokens.refresh(name)
+
+    return tokens.get(name)
 
 
 def issue_token(db) -> model.Token:
@@ -92,6 +94,13 @@ def home():
     return flask.render_template("home.html", error=error, events=events)
 
 
+@app.route("/admin")
+@with_token
+def admin():
+    error = flask.request.args.get("error")
+    return flask.render_template("admin.html", error=error)
+
+
 @app.route("/<name>")
 @with_token
 def event(name: str):
@@ -130,7 +139,7 @@ def edit_event(token: model.Token, name: str):
     except LookupError:
         return f"event {name!r} not found", 404
 
-    authorized = events.check_token(name, token.id)
+    authorized = events.check_token(name, token)
     expires = token.expires
 
     return flask.render_template(
@@ -156,7 +165,7 @@ def delete_event(token: model.Token, name: str):
     except LookupError:
         return f"event {name!r} not found", 404
 
-    authorized = events.check_token(name, token.id)
+    authorized = events.check_token(name, token)
     expires = token.expires
 
     return flask.render_template(
@@ -186,7 +195,7 @@ def edit_guest(token: model.Token, event_name: str, name: str):
     except LookupError:
         return f"guest {name!r} for event {event_name!r} not found", 404
 
-    authorized = guests.check_token(event.id, name, token.id)
+    authorized = guests.check_token(event.id, name, token)
     expires = token.expires
 
     return flask.render_template(
@@ -219,7 +228,7 @@ def delete_guest(token: model.Token, event_name: str, name: str):
     except LookupError:
         return f"guest {name!r} for event {event_name!r} not found", 404
 
-    authorized = guests.check_token(event.id, name, token.id)
+    authorized = guests.check_token(event.id, name, token)
     expires = token.expires
 
     return flask.render_template(
@@ -260,7 +269,7 @@ def api_create_event(token: model.Token):
         )
         return flask.redirect(url)
     
-    events.approve_token(name, token.id, password)
+    events.approve_token(name, token, password)
 
     url = flask.url_for("edit_event", name=name)
     return flask.redirect(url)
@@ -276,11 +285,11 @@ def api_update_event(token: model.Token, name: str):
     events = model.Events(db)
 
     try:
-        authorized = events.check_token(name, token.id)
+        authorized = events.check_token(name, token)
         if not authorized:
             password = flask.request.form.get("password", "")
             try:
-                events.approve_token(name, token.id, password)
+                events.approve_token(name, token, password)
             except PermissionError:
                 url = flask.url_for("edit_event", name=name, error="bad password or token expired")
                 return flask.redirect(url)
@@ -308,11 +317,11 @@ def api_delete_event(token: model.Token, name: str):
     events = model.Events(db)
 
     try:
-        authorized = events.check_token(name, token.id)
+        authorized = events.check_token(name, token)
         if not authorized:
             password = flask.request.form.get("password", "")
             try:
-                events.approve_token(name, token.id, password)
+                events.approve_token(name, token, password)
             except PermissionError:
                 url = flask.url_for("delete_event", name=name, error="bad password or token expired")
                 return flask.redirect(url)
@@ -376,7 +385,7 @@ def api_create_guest(token: model.Token, event_name: str):
         )
         return flask.redirect(url)
 
-    guest_table.approve_token(event.id, name, token.id, password)
+    guest_table.approve_token(event.id, name, token, password)
 
     url = flask.url_for(
         "event",
@@ -408,11 +417,11 @@ def api_update_guest(token: model.Token, event_name: str, name: str):
     guest_table = model.Guests(db)
 
     try:
-        authorized = guest_table.check_token(event.id, name, token.id)
+        authorized = guest_table.check_token(event.id, name, token)
         if not authorized:
             password = flask.request.form.get("password", "")
             try:
-                guest_table.approve_token(event.id, name, token.id, password)
+                guest_table.approve_token(event.id, name, token, password)
             except PermissionError:
                 url = flask.url_for(
                     "edit_guest",
@@ -452,11 +461,11 @@ def api_delete_guest(token: model.Token, event_name: str, name: str):
     guest_table = model.Guests(db)
 
     try:
-        authorized = guest_table.check_token(event.id, name, token.id)
+        authorized = guest_table.check_token(event.id, name, token)
         if not authorized:
             password = flask.request.form.get("password", "")
             try:
-                guest_table.approve_token(event.id, name, token.id, password)
+                guest_table.approve_token(event.id, name, token, password)
             except PermissionError:
                 url = flask.url_for(
                     "delete_guest",
@@ -477,8 +486,24 @@ def api_delete_guest(token: model.Token, event_name: str, name: str):
     return flask.redirect(url)
 
 
+@app.route("/api/admin", methods=["POST"])
+@with_token
+def api_admin(token: model.Token):
+    password = flask.request.form.get("password")
+
+    try:
+        model.Tokens(get_db()).set_admin(token.name, password)
+    except PermissionError:
+        url = flask.url_for("admin", error="bad password")
+        return flask.redirect(url)
+    
+    url = flask.url_for("home")
+    return flask.redirect(url)
+
+
+
 @app.route("/api/revoke")
-def revoke():
+def api_revoke():
     db = get_db()
     try:
         token = get_token(db)

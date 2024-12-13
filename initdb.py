@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS guest  (
 CREATE TABLE IF NOT EXISTS token (
   tokenid INTEGER PRIMARY KEY AUTOINCREMENT,
   tokenname TEXT NOT NULL,
+  tokenadmin BOOLEAN NOT NULL,
   tokenexpires TEXT NOT NULL,
   UNIQUE (tokenname)
 );
