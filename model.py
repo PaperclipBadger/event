@@ -14,7 +14,6 @@ try:
     with open("admin.passhash") as f:
         ADMIN_PASSHASH = f.read().strip()
 except FileNotFoundError:
-    print("!!! WARNING: ADMIN PASSHASH NOT FOUND !!!")
     ADMIN_PASSHASH = ""
 
 
