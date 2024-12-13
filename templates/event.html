@@ -64,8 +64,8 @@
 			{% for guest_name, guest_title, comment in attending %}
 			<li>
 				{{ guest_title }}{% if comment %}: "{{ comment }}"{% endif %}
-				<a href="{{ url_for('edit_guest', event_name=name, name=guest_name) }}">edit</a>
-				<a href="{{ url_for('delete_guest', event_name=name, name=guest_name) }}">delete</a>
+				(<a href="{{ url_for('edit_guest', event_name=name, name=guest_name) }}">edit</a>
+				| <a href="{{ url_for('delete_guest', event_name=name, name=guest_name) }}">delete</a>)
 			</li>
 			{% endfor %}
 		</ul>
