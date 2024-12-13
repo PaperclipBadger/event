@@ -1,5 +1,6 @@
 from typing import List
 import dataclasses
+import datetime
 import functools
 import hashlib
 import secrets
@@ -7,13 +8,7 @@ import sqlite3
 
 
 SALT = b"mmmmsalty"
-
-try:
-    with open("adminpw.hash") as f:
-        ADMIN_PASSHASH = f.read().strip()
-except FileNotFoundError:
-    print("!!! WARNING: ADMIN PASSWORD NOT SET !!!")
-    ADMIN_PASSHASH = ""
+TOKEN_LIFETIME_DAYS = 1
 
 
 @dataclasses.dataclass
@@ -36,6 +31,13 @@ class Guest:
     comment: str
     salt: bytes
     passhash: str
+
+
+@dataclasses.dataclass
+class Token:
+    id: int
+    name: str  # unique
+    expires: str
 
 
 def hash_password(salt: bytes, password: str):
@@ -116,37 +118,58 @@ class Guests:
             )
         else:
             raise AlreadyExistsError(f"guest {name} of event {event_id} already exists")
-        
+
+    @with_db
+    def approve_token(self, event_id: int, name: str, token_id: int, password: str) -> None:
+        guest = self.get(event_id, name)
+
+        passhash = hash_password(guest.salt, password)
+        if passhash == guest.passhash:
+            self.db.execute(
+                "INSERT INTO guesttoken"
+                " (guesttokentoken, guesttokenguest)"
+                " VALUES (?, ?)",
+                (token_id, guest.id),
+            )
+        else:
+            raise PermissionError(f"bad password for guest {guest!r}")
+    
+    @with_db
+    def check_token(self, event_id: int, name: str, token_id: int) -> bool:
+        guest = self.get(event_id, name)
+
+        cursor = self.db.execute(
+            "SELECT * FROM guesttoken"
+            " WHERE guesttokenguest = ? AND guesttokentoken = ?",
+            (guest.id, token_id),
+        )
+        row = cursor.fetchone()
+        return row is not None
+
     @with_db
     def update(
-        self, event_id: int, name: str, password: str, going: bool, comment: str,
+        self, event_id: int, name: str, going: bool, comment: str,
     ) -> None:
-        guest = self.get(event_id, name)
+        # raise LookupError if no such guest
+        self.get(event_id, name)
 
-        passhash = hash_password(guest.salt, password)
-        if passhash == guest.passhash:
-            self.db.execute(
-                "UPDATE guest"
-                " SET guestgoing = ?, guestcomment = ?"
-                " WHERE guestname = ? AND guestevent = ?",
-                (going, comment, name, event_id),
-            )
-        else:
-            raise PermissionError(f"bad password for guest {name} of event {event_id}")
+        self.db.execute(
+            "UPDATE guest"
+            " SET guestgoing = ?, guestcomment = ?"
+            " WHERE guestname = ? AND guestevent = ?",
+            (going, comment, name, event_id),
+        )
 
     @with_db
-    def delete(self, event_id: int, name: str, password: str) -> None:
-        guest = self.get(event_id, name)
+    def delete(self, event_id: int, name: str) -> None:
+        # raise LookupError if no such guest
+        self.get(event_id, name)
 
-        passhash = hash_password(guest.salt, password)
-        if passhash == guest.passhash:
-            self.db.execute(
-                "DELETE FROM guest"
-                " WHERE guestname = ? AND guestevent = ?",
-                (name, event_id),
-            )
-        else:
-            raise PermissionError(f"bad password for guest {name} of event {event_id}")
+        self.db.execute(
+            "DELETE FROM guest"
+            " WHERE guestname = ? AND guestevent = ?",
+            (name, event_id),
+        )
 
 
 @dataclasses.dataclass
@@ -206,37 +229,114 @@ class Events:
             )
         else:
             raise AlreadyExistsError
-    
+
     @with_db
-    def update(
-        self,
-        name: str,
-        password: str,
-        style: str,
-        title: str,
-        desc: str,
-    ) -> None:
+    def approve_token(self, name: str, token_id: int, password: str) -> None:
         event = self.get(name)
 
         passhash = hash_password(event.salt, password)
         if passhash == event.passhash:
             self.db.execute(
-                "UPDATE event"
-                " SET eventtitle = ?, eventstyle = ?, eventdesc = ?"
-                " WHERE eventname = ?",
-                (title, style, desc, name),
+                "INSERT INTO eventtoken"
+                " (eventtokentoken, eventtokenevent)"
+                " VALUES (?, ?)",
+                (token_id, event.id),
             )
         else:
             raise PermissionError(f"bad password for event {event!r}")
     
     @with_db
-    def delete(self, name: str, password: str) -> None:
+    def check_token(self, name: str, token_id: int) -> bool:
         event = self.get(name)
 
-        passhash = hash_password(event.salt, password)
+        cursor = self.db.execute(
+            "SELECT * FROM eventtoken"
+            " WHERE eventtokenevent = ? AND eventtokentoken = ?",
+            (event.id, token_id),
+        )
+        row = cursor.fetchone()
+        return row is not None
 
-        if passhash == event.passhash:
-            self.db.execute("DELETE FROM event WHERE eventname = ?", (name,))
-            self.db.execute("DELETE FROM guest WHERE guestevent = ?", (event.id))
+    @with_db
+    def update(
+        self,
+        name: str,
+        style: str,
+        title: str,
+        desc: str,
+    ) -> None:
+        # raise LookupError if no such event
+        event = self.get(name)
+
+        self.db.execute(
+            "UPDATE event"
+            " SET eventtitle = ?, eventstyle = ?, eventdesc = ?"
+            " WHERE eventname = ?",
+            (title, style, desc, name),
+        )
+
+    @with_db
+    def delete(self, name: str) -> None:
+        # raise LookupError if no such event
+        event = self.get(name)
+
+        self.db.execute("DELETE FROM event WHERE eventname = ?", (name,))
+        self.db.execute("DELETE FROM guest WHERE guestevent = ?", (event.id,))
+
+
+@dataclasses.dataclass
+class Tokens:
+    db: sqlite3.Connection
+
+    @with_db
+    def get(self, name: str) -> Token:
+        cursor = self.db.execute("SELECT * FROM token WHERE tokenname = ?", (name,))
+        row = cursor.fetchone()
+
+        if row is None:
+            raise LookupError(f"no token with name {name}")
+
         else:
-            raise PermissionError(f"bad password for event {event!r}")
+            return Token(
+                id=row["tokenid"],
+                name=row["tokenname"],
+                expires=datetime.datetime.fromisoformat(row["tokenexpires"]),
+            )
+
+    @with_db
+    def create(self, name: str) -> None:
+        expires = datetime.datetime.now() + datetime.timedelta(days=TOKEN_LIFETIME_DAYS)
+
+        try:
+            self.get(name)
+        except LookupError:
+            self.db.execute(
+                "INSERT INTO token"
+                " (tokenname, tokenexpires)"
+                " VALUES (?, ?)",
+                (name, expires.isoformat()),
+            )
+        else:
+            raise AlreadyExistsError
+    
+    @with_db
+    def update(self, name: str) -> None:
+        expires = datetime.datetime.now() + datetime.timedelta(days=1)
+
+        self.get(name)
+
+        self.db.execute(
+            "UPDATE token"
+            " SET tokenexpires = ?"
+            " WHERE tokenname = ?",
+            (expires.isoformat(), name),
+        )
+
+    @with_db
+    def delete(self, name: str) -> None:
+        # raise LookupError if there is no token
+        token = self.get(name)
+
+        self.db.execute("DELETE FROM token WHERE tokenid = ?", (token.id,))
+        self.db.execute("DELETE FROM guesttoken WHERE guesttokentoken = ?", (token.id,))
+        self.db.execute("DELETE FROM eventtoken WHERE eventtokentoken = ?", (token.id,))

@@ -46,7 +46,10 @@
 
 		<ul>
 		{% for event in events %}
-		  <li><a href="{{ url_for('event', name=event.name) }}">{{ event.title }}</a></li>
+		  <li>
+			<a href="{{ url_for('event', name=event.name) }}">{{ event.title }}</a>
+			(<a href="{{ url_for('edit_event', name=event.name) }}">edit</a> | <a href="{{ url_for('delete_event', name=event.name) }}">delete</a>)
+		  </li>
 		{% endfor %}
 		</ul>
 		{% endif %}
