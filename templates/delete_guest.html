@@ -2,12 +2,12 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8"/>
-		<title>delete guest "{{ name }}" from "{{ event_name }}"?</title>
+		<title>delete guest "{{ title }}" from "{{ event_name }}"?</title>
 		<style>body { max-width: 600px; margin: auto }</style>
 		<style>{{ style | safe }}</style>
 	</head>
 	<body>
-		<h1>delete "{{ name }}" from "{{ event_name }}"?</h1>
+		<h1>delete "{{ title }}" from "{{ event_name }}"?</h1>
 
 	 	<a href="{{ url_for('event', name=event_name) }}">view the event</a>
 

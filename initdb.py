@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS guest  (
   guestid INTEGER PRIMARY KEY AUTOINCREMENT,
   guestevent INTEGER NOT NULL,
   guestname TEXT NOT NULL,
+  guesttitle TEXT NOT NULL,
   guestgoing BOOLEAN NOT NULL,
   guestcomment TEXT NOT NULL,
   guestsalt TEXT NOT NULL,

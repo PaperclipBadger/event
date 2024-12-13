@@ -7,7 +7,7 @@
 		<style>{{ style | safe }}</style>
 	</head>
 	<body>
-		<h1>edit guest "{{ name }}" of "{{ event_name }}"</h1>
+		<h1>edit guest "{{ title }}" of "{{ event_name }}"</h1>
 
 	 	<a href="{{ url_for('event', name=event_name) }}">view the event</a>
 
@@ -15,8 +15,8 @@
 		<form action="/api/event/{{ event_name }}/guest/{{ name }}" method="POST">
 			<table>
 				<tr>
-					<td><label for="name">name</label></td>
-					<td>{{ name }}</td>
+					<td><label for="title">name</label></td>
+					<td>{{ title }}</td>
 				</tr>
 				<tr>
 					<td><label for="going">going</label></td>

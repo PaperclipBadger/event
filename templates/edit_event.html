@@ -2,12 +2,12 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8"/>
-		<title>edit event "{{ name }}"</title>
+		<title>edit event "{{ title }}"</title>
 		<style>body { max-width: 600px; margin: auto }</style>
 		<style>{{ style | safe }}</style>
 	</head>
 	<body>
-		<h1>edit event "{{ name }}"</h1>
+		<h1>edit event "{{ title }}"</h1>
 
 	 	<a href="{{ url_for('event', name=name) }}">view the event</a>
 

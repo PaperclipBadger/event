@@ -46,7 +46,7 @@
 				</tr>
 				<tr>
 					<td><label for="comment">comment</label></td>
-					<td><input type="text" id="comment" name="comment"{% if comment %}value="{{ guestcomment }}"{% endif %}/></td>
+					<td><input type="text" id="comment" name="comment"{% if guestcomment %}value="{{ guestcomment }}"{% endif %}/></td>
 				</tr>
 				<tr>
 					<td><label for="password">password</label></td>
@@ -61,9 +61,9 @@
 		{% if attending %}
 		<h2>these cool cats are coming</h2>
 		<ul>
-			{% for guest_name, comment in attending %}
+			{% for guest_name, guest_title, comment in attending %}
 			<li>
-				{{ guest_name }}{% if comment %}: "{{ comment }}"{% endif %}
+				{{ guest_title }}{% if comment %}: "{{ comment }}"{% endif %}
 				<a href="{{ url_for('edit_guest', event_name=name, name=guest_name) }}">edit</a>
 				<a href="{{ url_for('delete_guest', event_name=name, name=guest_name) }}">delete</a>
 			</li>
@@ -73,9 +73,9 @@
 		{% if bailing %}
 		<h2>these cool cats are bailing</h2>
 		<ul>
-			{% for guest_name, comment in bailing %}
+			{% for guest_name, guest_title, comment in bailing %}
 			<li>
-				{{ guest_name }}{% if comment %}: "{{ comment }}"{% endif %}
+				{{ guest_title }}{% if comment %}: "{{ comment }}"{% endif %}
 				<a href="{{ url_for('edit_guest', event_name=name, name=guest_name) }}">edit</a>
 				<a href="{{ url_for('delete_guest', event_name=name, name=guest_name) }}">delete</a>
 			</li>

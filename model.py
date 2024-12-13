@@ -33,6 +33,7 @@ class Guest:
     id: int
     event: int  # id of an event
     name: str  # unique given event
+    title: str
     going: bool
     comment: str
     salt: bytes
@@ -110,7 +111,7 @@ class Guests:
 
     @with_db
     def create(
-        self, event_id: int, name: str, password: str, going: bool, comment: str,
+        self, event_id: int, name: str, title: str, password: str, going: bool, comment: str,
     ) -> None:
         try:
             guest = self.get(event_id, name)
@@ -119,9 +120,9 @@ class Guests:
             passhash = hash_password(salt, password)
             self.db.execute(
                 "INSERT INTO guest"
-                " (guestname, guestevent, guestgoing, guestcomment, guestsalt, guestpasshash)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
-                (name, event_id, going, comment, salt, passhash),
+                " (guestname, guesttitle, guestevent, guestgoing, guestcomment, guestsalt, guestpasshash)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (name, title, event_id, going, comment, salt, passhash),
             )
         else:
             raise AlreadyExistsError(f"guest {name} of event {event_id} already exists")

@@ -1,8 +1,8 @@
 import datetime
 import functools
-import uuid
-import sqlite3
 import inspect
+import sqlite3
+import uuid
 
 import flask
 import markdown
@@ -11,6 +11,10 @@ import model
 
 
 app = flask.Flask(__name__)
+
+
+def slugify(s: str) -> str:
+    return ''.join((c if c.isalnum() else '-') for c in s)
 
 
 def get_db():
@@ -119,12 +123,12 @@ def event(name: str):
         title=event.title,
         style=event.style,
         desc=markdown.markdown(event.desc),
+        error=flask.request.args.get("error"),
         guestname=flask.request.args.get("guestname"),
-        guesterror=flask.request.args.get("error"),
         guestcomment=flask.request.args.get("comment"),
         guestgoing=flask.request.args.get("going", "True") != "False",
-        attending=[(guest.name, guest.comment) for guest in guests if guest.going],
-        bailing=[(guest.name, guest.comment) for guest in guests if not guest.going],
+        attending=[(guest.name, guest.title, guest.comment) for guest in guests if guest.going],
+        bailing=[(guest.name, guest.title, guest.comment) for guest in guests if not guest.going],
     )
 
 
@@ -171,6 +175,7 @@ def delete_event(token: model.Token, name: str):
     return flask.render_template(
         "delete_event.html",
         name=name,
+        title=event.title,
         style=event.style,
         error=flask.request.args.get("error"),
         authorized=authorized,
@@ -203,6 +208,7 @@ def edit_guest(token: model.Token, event_name: str, name: str):
         event_name=event.name,
         style=event.style,
         name=guest.name,
+        title=guest.title,
         going=guest.going,
         comment=guest.comment,
         error=flask.request.args.get("error"),
@@ -236,6 +242,7 @@ def delete_guest(token: model.Token, event_name: str, name: str):
         event_name=event.name,
         style=event.style,
         name=guest.name,
+        title=guest.title,
         error=flask.request.args.get("error"),
         authorized=authorized,
         expires=expires,
@@ -245,7 +252,8 @@ def delete_guest(token: model.Token, event_name: str, name: str):
 @app.route("/api/event", methods=["POST"])
 @with_token
 def api_create_event(token: model.Token):
-    name = flask.request.form["name"]
+    title = flask.request.form["name"].strip()
+    name = slugify(title)
     password = flask.request.form["password"]
 
     if not name:
@@ -260,12 +268,12 @@ def api_create_event(token: model.Token):
             name=name,
             password=password,
             style="",
-            title=name,
+            title=title,
             desc="# default event\n\nchange me"
         )
     except model.AlreadyExistsError:
         url = flask.url_for(
-            "home", error="there is already an event with that name",
+            "home", error="there is already an event with that name slug",
         )
         return flask.redirect(url)
     
@@ -278,6 +286,7 @@ def api_create_event(token: model.Token):
 @app.route("/api/event/<name>", methods=["POST"])
 @with_token
 def api_update_event(token: model.Token, name: str):
+    print("name", name)
     if not name:
         return "not found", 404
 
@@ -340,7 +349,8 @@ def api_create_guest(token: model.Token, event_name: str):
     if not event_name:
         return "not found", 404
 
-    name = flask.request.form["name"].strip()
+    title = flask.request.form["name"].strip()
+    name = slugify(title)
     comment = flask.request.form["comment"].strip()
     going = flask.request.form["going"] == "going"
     password = flask.request.form["password"]
@@ -349,7 +359,7 @@ def api_create_guest(token: model.Token, event_name: str):
         url = flask.url_for(
             "event",
             name=event_name,
-            guestname=name,
+            guestname=title,
             going=going,
             comment=comment,
             error="name must not be empty",
@@ -370,6 +380,7 @@ def api_create_guest(token: model.Token, event_name: str):
         guest_table.create(
             event_id=event.id,
             name=name,
+            title=title,
             password=password,
             going=going,
             comment=comment,
@@ -378,7 +389,7 @@ def api_create_guest(token: model.Token, event_name: str):
         url = flask.url_for(
             "event",
             name=event_name,
-            guestname=name,
+            guestname=title,
             going=going,
             comment=comment,
             error="there is already a guest with that name",
@@ -387,13 +398,7 @@ def api_create_guest(token: model.Token, event_name: str):
 
     guest_table.approve_token(event.id, name, token, password)
 
-    url = flask.url_for(
-        "event",
-        name=event_name,
-        guestname=name,
-        going=going,
-        comment=comment,
-    )
+    url = flask.url_for("event", name=event_name)
     return flask.redirect(url)
 
 
