@@ -23,5 +23,7 @@ Instructions
 
 .. code:: sh
 
+   pip install -r requirements.txt
    python hash_pw.py > admin.passhash
+   python initdb.py
    python website.py
