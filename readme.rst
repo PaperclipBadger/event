@@ -16,3 +16,12 @@ So I built my own. This is a simple app that supports
 - credential-free RSVP to those events
 
 My aim was for the RSVP process to be as painless as possible.
+
+
+Instructions
+============
+
+.. code:: sh
+
+   python hash_pw.py > admin.passhash
+   python website.py
