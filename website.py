@@ -178,7 +178,7 @@ def delete_event(token: model.Token, name: str):
     )
 
 
-@app.route("/<event_name>/<name>")
+@app.route("/<event_name>/guest/<name>")
 @with_token
 def edit_guest(token: model.Token, event_name: str, name: str):
     db = get_db()
@@ -211,7 +211,7 @@ def edit_guest(token: model.Token, event_name: str, name: str):
     )
 
 
-@app.route("/<event_name>/<name>/delete")
+@app.route("/<event_name>/guest/<name>/delete")
 @with_token
 def delete_guest(token: model.Token, event_name: str, name: str):
     db = get_db()
