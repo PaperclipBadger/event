@@ -3,13 +3,12 @@
 	<head>
 		<meta charset="utf-8"/>
 		<title>edit event "{{ title }}"</title>
-		<style>body { max-width: 600px; margin: auto }</style>
 		<style>{{ style | safe }}</style>
 	</head>
 	<body>
 		<h1>edit event "{{ title }}"</h1>
 
-	 	<a href="{{ url_for('event', name=name) }}">view the event</a>
+	 	<p><a href="{{ url_for('event', name=name) }}">view the event</a></p>
 
 		{% if error %}<p style="color: red">error: {{ error }}</p>{% endif %}
 		<form action="/api/event/{{ name }}" method="POST">
@@ -21,11 +20,11 @@
 				</tr>
 				<tr>
 					<td><label for="style">style</label></td>
-					<td><textarea id="style" name="style" rows=10>{{ style }}</textarea></td>
+					<td><span>Use <a href="https://easyhtmlcss.com/lessons/08-coding-with-style">CSS</a> for style:</span><br><textarea id="style" name="style" rows=10>{{ style }}</textarea></td>
 				</tr>
 				<tr>
 					<td><label for="desc">description</label></td>
-					<td><textarea id="desc" name="desc" rows=80>{{ desc }}</textarea></td>
+					<td><span>Use <a href="https://www.markdownguide.org/basic-syntax/">markdown</a> for headers, lists, etc:</span><br><textarea id="desc" name="desc" rows=80>{{ desc }}</textarea></td>
 				</tr>
 				<tr>
 					<td><label for="password">password</label></td>

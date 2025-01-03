@@ -12,6 +12,49 @@ import model
 
 app = flask.Flask(__name__)
 
+DEFAULT_STYLE = """
+body {
+  max-width: 600px;
+  margin: auto
+}
+
+table, textarea {
+  width: 100%;
+}
+
+td {
+  vertical-align: top;
+  padding: 5px;
+}
+"""
+
+DEFAULT_DESCRIPTION = """
+# default event description
+
+This is an event.
+This sentence belongs to the same paragraph as the one before.
+
+This sentence starts a new paragraph.
+
+## subheading
+
+Gosh what a great event! Here is a list of things:
+
+- the first thing
+- another thing
+- your favourite thing
+
+and here's a list with numbers:
+
+1. one
+2. two
+3. three
+
+Here's [a link](https://youtu.be/dQw4w9WgXcQ).
+
+You should probably change this.
+"""
+
 
 def slugify(s: str) -> str:
     return ''.join((c if c.isalnum() else '-') for c in s)
@@ -267,9 +310,9 @@ def api_create_event(token: model.Token):
         events.create(
             name=name,
             password=password,
-            style="",
+            style=DEFAULT_STYLE,
             title=title,
-            desc="# default event\n\nchange me"
+            desc=DEFAULT_DESCRIPTION,
         )
     except model.AlreadyExistsError:
         url = flask.url_for(
